@@ -1,0 +1,16 @@
+name: "IncidentResponseTemplate"
+type: "Flow"
+desc: "Template for incident response enrichment workflow"
+triggers:
+  - concrete: source
+blocks:
+  - concrete : source
+    name : getInputs
+  - concrete: source
+    name: updateIncident
+  - concrete: remediation
+    name: rollback
+  - concrete: source
+    name: resolveIncident
+  - concrete: communication
+    name: communicate

@@ -1,0 +1,104 @@
+blocks:
+  - name: rollback
+    steps:
+      - action: core.sql
+        id: GetDeployment
+        name: "Get deployment name"
+        desc: Description
+        inputs:
+          sql: |-
+              -- Returns deployment name of a given pod
+              select d.name 
+              from 
+              kubernetes_deployment as d
+              where 
+              	d.uid = (select 
+              	json_extract(rs_owner.value,'$.uid') as d_uid
+              from 
+              	kubernetes_replicaset as rs,
+                  json_each(rs.owner_references) as rs_owner,
+                  kubernetes_pod as pod,
+                  json_each(pod.owner_references) as pod_owner
+              where 
+              	pod.name = '{{variables.pod_name}}'
+                  and
+                  pod.namespace = '{{variables.namespace}}'
+                  and 
+                  json_extract(pod_owner.value,'$.kind') = 'ReplicaSet'
+                  and
+                  json_extract(pod_owner.value,'$.uid') = rs.uid
+                  )
+        connections:
+          kubernetes: kubernetes_connection
+      - action: core.kubectl
+        id: RollbackDeployment
+        name: "Rollback deployment"
+        inputs:
+          Command: >
+            kubectl rollout undo deployment {{steps.GetDeployment.output.rows[0][0]}} -n
+            {{variables.namespace}}
+        connections:
+          kubernetes: kubernetes_connection
+  - name: removePodFromDeploy
+    steps:
+      - action: core.sql
+        id: GetLabelSelector
+        name: Get selector in use for the deployment the pod belongs to
+        desc: Description
+        inputs:
+          sql: |-
+              select selector 
+              from 
+                 kubernetes_deployment as d
+              where 
+                    d.uid = (select 
+                    json_extract(rs_owner.value,'$.uid') as d_uid
+                    from 
+                        kubernetes_replicaset as rs,
+                          json_each(rs.owner_references) as rs_owner,
+                          kubernetes_pod as pod,
+                          json_each(pod.owner_references) as pod_owner
+                      where 
+                        pod.name = '{{variables.pod_name}}'
+                          and 
+                          json_extract(pod_owner.value,'$.kind') = 'ReplicaSet'
+                          and
+                          json_extract(pod_owner.value,'$.uid') = rs.uid
+                          )
+      - action: core.python
+        id: GetNewLabel
+        name: Get label to change and new value
+        desc: Description
+        inputs:
+        code: >-
+                import json
+                
+                from dotmap import DotMap 
+                
+                
+                if len(context.steps.GetLabelSelector.output.rows) > 0:
+                
+                  label_selector = json.loads(context.steps.GetLabelSelector.output.rows[0][0])["matchLabels"]
+                
+                  if context.inputs.label_to_change:
+                    context.variables.label_key = next(iter(label_selector))
+                
+                  else:
+                    context.variables.label_key = context.inputs.label_to_change
+                
+                  context.variables.label_new_value = label_selector[context.variables.label_key] + "-out-for-maintenance"
+                
+                  context.output.Message = "Pod {{variables.pod_name}} has been taken off of deployment by changing its label {{variables.label_key}} to {{variables.label_new_value}}"
+                
+                
+                else:
+                  context.output.Message = "Pod deployment not found"
+      - action: core.kubectl
+        id: ApplyNewLabelOnPod
+        name: Apply new label on pod
+        desc: Description
+        inputs:
+        Command: kubectl label pod {{variables.pod_name}}
+                {{variables.label_key}}={{variables.label_new_value}} --overwrite -n
+                {{variables.namespace}}
+        when: "{{steps.GetLabelSelector.output.rows[0][0] != ''}}"

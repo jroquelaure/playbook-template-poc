@@ -1,0 +1,19 @@
+blocks:
+  - name: communicate
+    inputs:
+      slack_channel:
+        default: random
+        display_name: Required slack channel
+        placeholder: Slack Channel for communication
+        required: true
+        type: text
+    steps:
+      - name: "Send Slack message"
+        id: SendSlackMessageAfterResolution
+        action: slack.SendMessage
+        inputs:
+          Channel: "{{inputs.slack_channel}}"
+          Text: "Incident {{variables.incident_id}} has been
+                resolved from Blink {{execution_url}}. "
+        connections:
+          slack: slack_connection

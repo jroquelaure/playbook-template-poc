@@ -1,0 +1,46 @@
+triggers:
+  webhooks:
+    - id: ""
+      name: pagerduty rollback deployment
+      active: true
+      when: ""
+      inputs:
+        incident_id: "{{event.data.id}}"
+        namespace: "{{event.data.service.summary}}"
+blocks:
+  - name: getInputs
+    steps:
+      - action: core.python
+        id: AttachExecutionUrl
+        name: Attach execution url to incident
+        desc: Description
+        inputs:
+          code: print(context.inputs.incident_id)
+      - action: core.sql
+        id: FailingPods
+        name: Get Failing Pods
+        desc: Description
+        inputs:
+          sql: |-
+              select name, status, namespace 
+              from kubernetes_pod
+              where namespace = '{{inputs.namespace}}' and status != 'Running'
+      - action: core.python
+        id: SetContextVariables
+        name: Set Context variables
+        desc: Description
+        inputs:
+          code: |-
+              context.variables.pod_name =  context.steps.FailingPods.output[0][0]
+              context.variables.namespace =  context.inputs.namespace
+              context.variables.incident_id = context.inputs.incident_id
+  - name: updateIncident
+    steps:
+      - action: pagerduty.CreateIncidentStatusUpdate
+        id: AttachExecutionUrl
+        name: Attach execution url to incident
+        desc: Description
+        inputs:
+          ID: "{{inputs.incident_id}}"
+          Message: "Starting Remediation Playbook : {{execution_url}} ."
+          Request Issuer Email: "{{inputs.user_mail}}"

@@ -1,0 +1,37 @@
+inputs:
+
+triggers:
+  webhooks:
+    - id: ""
+      name: datadog incident
+      active: true
+      when: ""
+      inputs:
+        incident_id: "{{incident_id}}"
+        namespace: "{{incident_fields.Namespace}}"
+        pod_name: "{{incident_fields.Pod}}"
+blocks:
+  - name: getInputs
+    steps:
+      - action: core.python
+        id: ParsePayload
+        name: Parse payload
+        desc: Description
+        inputs:
+          code: |-
+            context.variables.pod_name =  context.inputs.pod_name[0]
+            context.variables.namespace =  context.inputs.namespace[0]
+            context.variables.incident_id = context.inputs.incident_id
+  - name: updateIncident
+    steps:
+      - action: datadog.UpdateIncidentTimeline
+        id: UpdateIncidentStartPB
+        name: Update incident timeline with playbook link
+        desc: Description
+        inputs:
+          Incident ID: "{{variables.incident_id}}"
+          Message: "[Rollback deployment playbook has been
+              triggered]({{execution_url})"
+        connections:
+          datadog: datadog_connection
+
