@@ -9,6 +9,19 @@ triggers:
         namespace: "{{event.data.service.summary}}"
 blocks:
   - name: getInputs
+    inputs:
+      namespace:
+        default:
+        display_name:
+        placeholder:
+        required: true
+        type: text
+      incident_id:
+        default:
+        display_name:
+        placeholder:
+        required: true
+        type: text
     steps:
       - action: core.python
         id: AttachExecutionUrl

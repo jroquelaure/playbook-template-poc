@@ -20,9 +20,12 @@ func main() {
 }
 
 func GeneratedPlaybook(template structs.MasterTemplate, args map[string]string, playbookPath string) string {
+	steps, inputs := GetSteps(template, args)
+
 	playbook := structs.Playbook{
 		Name:     template.Name,
-		Steps:    GetSteps(template, args),
+		Steps:    steps,
+		Inputs:   inputs,
 		Triggers: GetTriggers(template, args),
 	}
 
@@ -45,20 +48,29 @@ func GetTriggers(template structs.MasterTemplate, a map[string]string) structs.T
 	}
 }
 
-func GetSteps(template structs.MasterTemplate, args map[string]string) []structs.Step {
+func GetSteps(template structs.MasterTemplate, args map[string]string) ([]structs.Step, map[string]interface{}) {
 	var (
 		steps []structs.Step
 	)
+	inputs := make(map[string]interface{})
+
 	for _, step := range template.Blocks {
 		impl := LoadImplementationFromYaml(step.Concrete, template.TemplateDirectory, args)
 		for _, block := range impl.Blocks {
 			if block.Name == step.Name {
 				steps = append(steps, block.Steps...)
+				if len(block.Inputs) > 0 {
+					for input := range block.Inputs {
+						if _, ok := inputs[input]; !ok {
+							inputs[input] = block.Inputs[input]
+						}
+					}
+				}
 			}
 		}
 
 	}
-	return steps
+	return steps, inputs
 }
 
 func LoadTemplate(templateDirectoryPath string, templateFile string) structs.MasterTemplate {

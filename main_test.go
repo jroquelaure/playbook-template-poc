@@ -41,7 +41,7 @@ func TestLoadTemplate(t *testing.T) {
 
 func TestLoadImplementationFromYaml(t *testing.T) {
 
-	imp := LoadImplementationFromYaml("source", templateDirectory, args)
+	imp := LoadImplementationFromYaml("communication", templateDirectory, args)
 
 	for a, _ := range imp.Blocks {
 		t.Logf("d%dfzf ", a)
@@ -54,10 +54,14 @@ func TestLoadImplementationFromYaml(t *testing.T) {
 func TestGetSteps(t *testing.T) {
 	template := LoadTemplate(templateDirectory, templateFile)
 
-	steps := GetSteps(template, args)
+	steps, inputs := GetSteps(template, args)
 
 	for a, _ := range steps {
 		t.Logf("d%dfzf ", a)
+	}
+
+	for i, _ := range inputs {
+		t.Logf("d%sfzf ", i)
 	}
 
 	t.Logf("success")

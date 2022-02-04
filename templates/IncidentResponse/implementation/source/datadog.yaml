@@ -1,5 +1,3 @@
-inputs:
-
 triggers:
   webhooks:
     - id: ""
@@ -12,6 +10,25 @@ triggers:
         pod_name: "{{incident_fields.Pod}}"
 blocks:
   - name: getInputs
+    inputs:
+      pod_name:
+        default:
+        display_name:
+        placeholder:
+        required: true
+        type: text
+      namespace:
+        default:
+        display_name:
+        placeholder:
+        required: true
+        type: text
+      incident_id:
+        default:
+        display_name:
+        placeholder:
+        required: true
+        type: text
     steps:
       - action: core.python
         id: ParsePayload
