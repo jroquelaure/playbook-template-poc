@@ -1,10 +1,11 @@
 package structs
 
 type Step struct {
-	Action string            `yaml:"action" json:"action"`
-	Id     string            `yaml:"id" json:"id"`
-	Name   string            `yaml:"name" json:"name"`
+	Action string            `yaml:"action,omitempty" json:"action"`
+	Id     string            `yaml:"id,omitempty" json:"id"`
+	Name   string            `yaml:"name,omitempty" json:"name"`
 	Inputs map[string]string `yaml:"inputs,omitempty" json:"inputs"`
+	Text   string            `yaml:"text,omitempty" json:"text"`
 }
 
 type Block struct {

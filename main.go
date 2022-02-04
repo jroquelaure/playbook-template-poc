@@ -58,6 +58,7 @@ func GetSteps(template structs.MasterTemplate, args map[string]string) ([]struct
 		impl := LoadImplementationFromYaml(step.Concrete, template.TemplateDirectory, args)
 		for _, block := range impl.Blocks {
 			if block.Name == step.Name {
+				steps = append(steps, structs.Step{Text: "# " + block.Name})
 				steps = append(steps, block.Steps...)
 				if len(block.Inputs) > 0 {
 					for input := range block.Inputs {
